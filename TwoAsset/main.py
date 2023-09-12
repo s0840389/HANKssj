@@ -395,4 +395,15 @@ fig4.savefig('Illiquid_assets.png')
 
 
 
+# consummption over disposable income
 
+disinc=ss['w']*ss.internals['hh']['z_grid'][:,np.newaxis]+ss['rb']*ss.internals['hh']['b_grid'][np.newaxis,:]
+
+disinc=disinc[:,:,np.newaxis]+ss['ra']*ss.internals['hh']['a_grid'][np.newaxis,np.newaxis,:]
+
+crule=ss.internals['hh']['c']/disinc
+
+fig10,ax10=plt.subplots()
+
+ax10.plot(ss.internals['hh']['b_grid'],crule[:,:,0].swapaxes(0,1))
+ax10

@@ -1,0 +1,57 @@
+import copy
+import numpy as np
+import matplotlib.pyplot as plt
+
+from sequence_jacobian import het, simple, create_model              # functions
+from sequence_jacobian import interpolate, grids, misc, estimation   # modules
+
+
+
+
+def household_init(a_grid, e_grid, r, w, eis):
+    V = (1 + r) * a_grid[np.newaxis, :] + w * e_grid[:, np.newaxis]
+    Va = (1 + r) * (0.1 * coh) ** (-1 / eis)
+    return Va, V
+
+@het(exogenous='Pi', policy='a', backward={'Va','V'},, backward_init=household_init)
+def household(Va_p,V_p, a_grid, e_grid, r, w, ph,beta, eis,alpha,kappah):
+    """Single backward iteration step using endogenous gridpoint method for 
+    households with CRRA utility and extreme value preference for housing
+
+    (z,a,h) h={0,1}
+
+    Parameters
+    ----------
+    Va_p     : array (nE, nA), expected marginal value of assets next period
+    V_p: Expected value function next period
+    a_grid   : array (nA), asset grid
+    e_grid   : array (nE), producticity grid
+    r        : scalar, ex-post real interest rate
+    w        : scalar, wage
+    beta     : scalar, discount factor
+    ph:       houseprice
+    eis      : scalar, elasticity of intertemporal substitution
+
+    Returns
+    ----------
+    Va : array (nz, nA,nh), marginal value of assets today
+    V : array (nz, nA,nh),,value function today
+
+    a  : array (nE, nA), asset policy today
+    c  : array (nE, nA), consumption policy today
+    """
+    
+    # algo
+    #1) calculate q (prob of renting next period)
+    #2) do egm based on moving renting next period
+    #3) do egm based on owning next period
+    
+
+    #uc_nextgrid = beta * Va_p
+    #c_nextgrid = uc_nextgrid ** (-eis)
+    #coh = (1 + r) * a_grid[np.newaxis, :] + w * e_grid[:, np.newaxis]
+    #a = interpolate.interpolate_y(c_nextgrid + a_grid, coh, a_grid)
+    #misc.setmin(a, a_grid[0])
+    #c = coh - a
+    #Va = (1 + r) * c ** (-1 / eis)
+    return Va, a, c

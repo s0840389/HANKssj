@@ -1,3 +1,6 @@
+
+# ces between production on skill
+
 import os
 import pickle
 
@@ -36,16 +39,61 @@ def wages(w, e_grid):
     we = w * e_grid
     return we
 
+hh1 = hh.add_hetinputs([make_grid, transfers, wages])
+
+#hh0=hetblocks.hh_labor.hh
+
+#hh1 = hh0.add_hetinputs([make_grid, transfers, wages])
+
 #hh = hh_prob_1A.hh
 
-hh1 = hh.add_hetinputs([make_grid, transfers, wages])
+def compute_consumption(c):
+
+    c01 = np.zeros_like(c)
+    c01_10 = np.zeros_like(c)
+    c10_35 =np.zeros_like(c)
+    c35_65 =np.zeros_like(c)
+    c65_90 = np.zeros_like(c)
+    c90_99 = np.zeros_like(c)
+    c99 = np.zeros_like(c)
+    c01[0,:] = c[0,:]
+    c01_10[1,:] = c[1,:]
+    c10_35[2,:] = c[2,:]
+    c35_65[3,:] = c[3,:]
+    c65_90[4,:] = c[4,:]
+    c90_99[5,:] = c[5,:]
+    c99[6,:] = c[6,:]
+    return c01, c01_10, c10_35, c35_65, c65_90, c90_99, c99
+
+
+def compute_labor(ne):
+    n01 = np.zeros_like(ne)
+    n01_10 =np.zeros_like(ne)
+    n10_35 =np.zeros_like(ne)
+    n35_65 =np.zeros_like(ne)
+    n65_90 = np.zeros_like(ne)
+    n90_99 = np.zeros_like(ne)
+    n99 = np.zeros_like(ne)
+    n01[0,:] = ne[0,:]
+    n01_10[1,:] = ne[1,:]
+    n10_35[2,:] =ne[2,:]
+    n35_65[3,:] =ne[3,:]
+    n65_90[4,:] = ne[4,:]
+    n90_99[5,:] = ne[5,:]
+    n99[6,:] = ne[6,:]
+
+    ncheck=np.zeros_like(ne)
+    #ncheck[0,:]=1
+    ncheck=ne*1
+
+    return n01, n01_10, n10_35, n35_65, n65_90, n90_99, n99, ncheck
 
 
 def labor_supply(n, e_grid):
     ne = e_grid[:, np.newaxis] * n
     return ne
 
-hh_ext = hh1.add_hetoutputs([labor_supply])
+hh_ext = hh1.add_hetoutputs([labor_supply,compute_consumption,compute_labor])
 
 
 # firms
@@ -110,10 +158,10 @@ blocks_ss = [hh_ext, firm, monetary, fiscalSS, mkt_clearing, nkpc_ss]
 
 hank_ss = create_model(blocks_ss, name="One-Asset HANK SS")
 
-calibration = {'eis': 0.7, 'frisch': 0.5, 'rho_e': 0.966, 'sd_e': 0.92, 'nE': 7,
+calibration = {'eis': 0.5, 'frisch': 0.5, 'rho_e': 0.966, 'sd_e': 0.5, 'nE': 7,
                'amin': 0.0, 'amax': 150, 'nA': 250, 'Y': 1.0, 'Z': 1.0, 'pi': 0.0,
-               'mu': 1.2, 'kappa': 0.1, 'rstar': 0.005, 'phi': 1.5, 'B': 5.6,'cbar': 0.0,'G':0.2,
-               'rhotax':0.9,'gammatax':0.4}
+               'mu': 1.2, 'kappa': 0.1, 'rstar': 0.005, 'phi': 1.5, 'B': 5.6,
+               'cbar': 0.0,'G':0.0,'rhotax':0.9,'gammatax':0.9}
 
 unknowns_ss = {'beta': 0.986, 'vphi': 0.8}
 targets_ss = {'asset_mkt': 0, 'labor_mkt': 0}
@@ -125,7 +173,7 @@ ss['taxss']=ss['Tax']
 
 # dynamic model
 
-blocks = [hh_ext, firm, monetary, fiscal, mkt_clearing, nkpc]
+blocks = [hh_ext, firm, monetary, fiscalSS, mkt_clearing, nkpc]
 hank = create_model(blocks, name="One-Asset HANK")
 
 T = 300
@@ -137,6 +185,7 @@ targets = ['nkpc_res', 'asset_mkt', 'labor_mkt']
 J_ha = hh_ext.jacobian(ss, inputs=['Tax','Div', 'r','w'], T=T)
 
 G = hank.solve_jacobian(ss, unknowns, targets, exogenous, T=T,Js={'hh': J_ha})
+#G = hank.solve_jacobian(ss, unknowns, targets, exogenous, T=T)
 
 
 J_ha_sticky=stick_jacob(J_ha,0.94) # Reduce forwarding lookingness of hh Jacobian and resolve model
@@ -145,7 +194,7 @@ G_sticky = hank.solve_jacobian(ss, unknowns, targets, exogenous, T=T,Js={'hh': J
 
 # Consumption decomposition chart
 
-drstar = -0.0025 * 0.8 ** (np.arange(T)[:, np.newaxis])
+drstar = -0.0025 * 0.61 ** (np.arange(T)[:, np.newaxis])
 
 drstar_fwd=np.roll(drstar,10)
 drstar_fwd[:10]=0
@@ -227,4 +276,58 @@ fig4.savefig('Asset_dist.png')
 #plt.plot(ss.internals['hh']['a_grid'],ss.internals['hh']['c'].swapaxes(0,1))
 
 
+rho_r, sig_r = 0.61, -0.01/4
+rstar_shock_path = {"rstar": sig_r * rho_r ** (np.arange(T))}
 
+#td_nonlin = hank.solve_impulse_nonlinear(ss, unknowns, targets, rstar_shock_path)
+td_lin = hank.solve_impulse_linear(ss, unknowns, targets, rstar_shock_path)
+
+zdist=np.sum(ss.internals['hh']['D'],axis=1)
+
+fig5, ax=plt.subplots()
+
+N01IRF=(G['N01']['rstar']@drstar)[0:24]/ss['N01']*100
+N50IRF=(G['N35_65']['rstar']@drstar)[0:24]/ss['N35_65']*100
+NIRF=(G['N']['rstar']@drstar)[0:24]/ss['N']*100
+N50IRFv2=td_lin['N35_65'][0:24]*100/ss['N35_65']
+N99IRF=(G['N99']['rstar']@drstar)[0:24]/ss['N99']*100
+
+plt.plot(N01IRF, label='Lowest income', linestyle='-', linewidth=2.5)
+plt.plot(N50IRF, label='Middle', linestyle='-', linewidth=2.5)
+plt.plot(N99IRF, label='Top', linestyle='-', linewidth=2.5)
+plt.plot(N50IRFv2, label='Middle (check)', linestyle='--', linewidth=2.5)
+plt.plot(NIRF, label='Aggregate', linestyle='-', linewidth=2.5)
+
+plt.title('Labour response')
+plt.legend()
+
+plt.show()
+
+fig5.savefig('NIRF_dist.png')
+
+
+
+
+plt.plot(G['Y']['rstar']@drstar)
+plt.show()
+
+
+xx=['N01']
+
+xx=['N01','N01_10','N10_35','N35_65','N65_90','N90_99','N99']
+
+Nirf=0*td_lin['N']
+Nss=0
+iter=0
+for ii in xx:
+    Nirf=Nirf+td_lin[ii]/ss[ii]*100 #*zdist[iter]*100
+    Nss=Nss+ss[ii]#*zdist[iter]
+    iter=iter+1
+
+
+fig6, ax=plt.subplots()
+
+plt.plot(Nirf[0:20], label='BU', linestyle='-', linewidth=2.5)
+plt.plot(100*td_lin['NE'][0:20], label='TD', linestyle='-', linewidth=2.5)
+plt.title('Labour response')
+plt.legend()

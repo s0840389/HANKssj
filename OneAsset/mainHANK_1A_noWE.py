@@ -117,7 +117,7 @@ hank_ss = create_model(blocks_ss, name="One-Asset HANK SS")
 calibration = {'eis': 0.70, 'frisch': 0.5, 'rho_e': 0.966, 'sd_e': 0.92, 'nE': 7,
                'amin': 0.0, 'amax': 150, 'nA': 250, 'N': 1.0, 'Z': 1.0, 'pi': 0.0,
                'mu': 1.2, 'kappa': 0.1, 'rstar': 0.005, 'phi': 1.5, 'B': 5.6,'cbar': 0.0,'G':0.2,
-               'rhotax':0.9,'gammatax':0.4}
+               'rhotax':0.5,'gammatax':0.6}
 
 unknowns_ss = {'beta': 0.986}
 targets_ss = {'asset_mkt': 0}
