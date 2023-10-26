@@ -407,3 +407,10 @@ fig10,ax10=plt.subplots()
 
 ax10.plot(ss.internals['hh']['b_grid'],crule[:,:,0].swapaxes(0,1))
 ax10
+
+
+# check convergence
+
+fig6, ax =plt.subplots()
+
+ax.plot(G['Y']['rstar']@drstar*100)
